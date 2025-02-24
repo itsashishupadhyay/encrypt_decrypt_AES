@@ -37,3 +37,4 @@
 .idea/
 build/
 CMakeFiles/
+.DS_Store
