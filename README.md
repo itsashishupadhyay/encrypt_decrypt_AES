@@ -88,8 +88,10 @@ cmake --build build
 |--------|-------------|
 | `-h, --help` | Display help menu with usage information |
 | `-e, --encrypt <bits>` | Encrypt a file with specified key size (128, 192, or 256 bits) |
-| `-d, --decrypt` | Decrypt a file using provided key |
+| `-d, --decrypt <key>` | Decrypt a file using provided key in hexadecimal format |
+| `-iv <initialization_vector>` | Initialization vector in hexadecimal format (required with `-d`) |
 | `-p, --path <filepath>` | Specify the path to the file to encrypt/decrypt |
+| `-o, --output <directory>` | Specify output directory (optional, defaults to input file directory) |
 | `-v, --verbose` | Enable verbose output for detailed processing information |
 
 ### Examples
@@ -114,7 +116,27 @@ cmake --build build
 ./encrypt_decrypt_AES -e 192 -p image.jpg
 ```
 
-#### 4. Display help:
+#### 4. Decrypt a file:
+```bash
+./encrypt_decrypt_AES -d aeee95f1d12e20c27ff4f4788ec52147f91a833d946415b37c6eb687053bd00a \
+                      -iv 06ec7db13e5c7d8a443c44c8516c308c \
+                      -p file_encrypted.txt.bin
+```
+
+**Note:** The key and IV are found in the `aes_key<bits>.txt` file generated during encryption.
+
+**Output:**
+- Decrypted file: `file_encrypted.txt_decrypted.bin` (in same directory as encrypted file)
+
+#### 5. Decrypt with custom output directory:
+```bash
+./encrypt_decrypt_AES -d aeee95f1d12e20c27ff4f4788ec52147f91a833d946415b37c6eb687053bd00a \
+                      -iv 06ec7db13e5c7d8a443c44c8516c308c \
+                      -p file_encrypted.txt.bin \
+                      -o /path/to/output
+```
+
+#### 6. Display help:
 ```bash
 ./encrypt_decrypt_AES -h
 ```
@@ -137,6 +159,25 @@ cmake --build build
 3. **Automatic Verification**:
    - After encryption, automatically decrypts the file to verify integrity
    - Creates a decrypted file with `_decrypted` suffix for verification
+
+### Decryption Process
+
+1. **Key and IV Input**:
+   - User provides the encryption key and IV from the saved key file (`aes_key<bits>.txt`)
+   - Both must be in hexadecimal format
+   - Key can be 32, 48, or 64 hex characters (16, 24, or 32 bytes for AES-128/192/256)
+   - IV must be exactly 32 hex characters (16 bytes)
+
+2. **File Decryption**:
+   - Reads the encrypted file
+   - Decrypts data using AES-CBC mode with the provided key and IV
+   - Writes decrypted data to output file with `_decrypted` suffix
+   - Output is placed in the same directory as the input file (or custom directory if `-o` is used)
+
+3. **Validation**:
+   - Validates key and IV format before attempting decryption
+   - Ensures key length matches AES requirements
+   - Verifies IV is exactly 16 bytes
 
 ### Key File Format
 
@@ -185,21 +226,76 @@ encrypt_decrypt_AES/
 
 ## Troubleshooting
 
-### OpenSSL Not Found
-If CMake cannot find OpenSSL, you may need to specify the path:
+### OpenSSL Not Found or CMake Configuration Errors
+
+If CMake cannot find OpenSSL or fails with errors like `Target "encryption_decryption_library" links to: OpenSSL::SSL but the target was not found`, you may need to specify the OpenSSL paths explicitly.
+
+**Quick Solution (macOS with Homebrew):**
+
+For Intel Macs:
 ```bash
-cmake -B build -S . -DOPENSSL_ROOT_DIR=/path/to/openssl
+cmake -B build -S . \
+  -DOPENSSL_ROOT_DIR=/usr/local/opt/openssl@3 \
+  -DOPENSSL_INCLUDE_DIR=/usr/local/opt/openssl@3/include \
+  -DOPENSSL_SSL_LIBRARY=/usr/local/opt/openssl@3/lib/libssl.dylib \
+  -DOPENSSL_CRYPTO_LIBRARY=/usr/local/opt/openssl@3/lib/libcrypto.dylib
 ```
 
-On macOS with Homebrew:
+For Apple Silicon Macs (M1/M2/M3):
 ```bash
-cmake -B build -S . -DOPENSSL_ROOT_DIR=/usr/local/opt/openssl
+cmake -B build -S . \
+  -DOPENSSL_ROOT_DIR=/opt/homebrew/opt/openssl@3 \
+  -DOPENSSL_INCLUDE_DIR=/opt/homebrew/opt/openssl@3/include \
+  -DOPENSSL_SSL_LIBRARY=/opt/homebrew/opt/openssl@3/lib/libssl.dylib \
+  -DOPENSSL_CRYPTO_LIBRARY=/opt/homebrew/opt/openssl@3/lib/libcrypto.dylib
 ```
+
+Then build:
+```bash
+cmake --build build
+```
+
+**Alternative: Navigate to build directory:**
+```bash
+cd build
+cmake \
+  -DOPENSSL_ROOT_DIR=/opt/homebrew/opt/openssl@3 \
+  -DOPENSSL_INCLUDE_DIR=/opt/homebrew/opt/openssl@3/include \
+  -DOPENSSL_SSL_LIBRARY=/opt/homebrew/opt/openssl@3/lib/libssl.dylib \
+  -DOPENSSL_CRYPTO_LIBRARY=/opt/homebrew/opt/openssl@3/lib/libcrypto.dylib \
+  ..
+make
+```
+
+**Linux:**
+```bash
+cmake -B build -S . -DOPENSSL_ROOT_DIR=/usr
+```
+
+### Common Issues
+
+**1. Stale CMake Cache:**
+If you're still getting errors after specifying paths, clean the build directory:
+```bash
+rm -rf build
+mkdir build
+# Then run cmake with the OpenSSL paths as shown above
+```
+
+**2. Multiple OpenSSL Versions:**
+If you have multiple OpenSSL versions installed, CMake might find stale references. Use the explicit path method shown above to force CMake to use the correct version.
+
+**3. macOS SDK Warning:**
+You might see a warning about `CMAKE_OSX_SYSROOT` - this can be safely ignored and doesn't affect the build.
 
 ### Build Errors
 - Ensure you have a C++17 compatible compiler
-- Verify OpenSSL development headers are installed
+- Verify OpenSSL development headers are installed:
+  - macOS: `brew list openssl@3`
+  - Ubuntu/Debian: `dpkg -l | grep libssl-dev`
+  - Fedora/RHEL: `rpm -q openssl-devel`
 - Check that CMake version is 3.10 or higher: `cmake --version`
+- On macOS, ensure OpenSSL is installed: `brew install openssl@3`
 
 ## Keywords
 

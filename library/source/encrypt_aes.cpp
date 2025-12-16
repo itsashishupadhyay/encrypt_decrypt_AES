@@ -159,7 +159,6 @@ namespace AES
         // Cleanup
         inFile.close();
         outFile.close();
-        decrypt_file(outputFile, this->key_data.key, this->key_data.length, this->key_data.iv, destPath);
     }
 
     void Encryptor::decrypt_file(const std::string &path2encryptedfile,
@@ -180,6 +179,14 @@ namespace AES
         size_t fileSize = inFile.tellg();
         inFile.seekg(0, std::ios::beg);
 
+        // Set destination path if not provided
+        std::string destPath = path2destination;
+        if (destPath.empty())
+        {
+            size_t lastSlash = path2encryptedfile.find_last_of("/\\");
+            destPath = (lastSlash == std::string::npos) ? "." : path2encryptedfile.substr(0, lastSlash);
+        }
+
         // Create output file name
         size_t dotPos = path2encryptedfile.find_last_of(".");
         std::string filename;
@@ -192,7 +199,7 @@ namespace AES
             filename = path2encryptedfile.substr(path2encryptedfile.find_last_of("/\\") + 1);
         }
         std::string extension = path2encryptedfile.substr(dotPos);
-        std::string outputFile = path2destination + "/" + filename + "_decrypted" + extension;
+        std::string outputFile = destPath + "/" + filename + "_decrypted" + extension;
 
         // Open output file
         std::ofstream outFile(outputFile, std::ios::binary);
