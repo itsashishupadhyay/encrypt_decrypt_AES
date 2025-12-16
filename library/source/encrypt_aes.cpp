@@ -41,14 +41,14 @@ namespace AES
         keyFile << "AES Key (" << user_key_size << " bits):" << std::endl;
         for (int i = 0; i < user_key_size / 8; i++)
         {
-            keyFile << std::hex << (int)key_data.key[i];
+            keyFile << std::hex << std::setw(2) << std::setfill('0') << (int)key_data.key[i];
         }
         keyFile << std::endl;
 
         keyFile << "IV AES_BLOCK_SIZE (" << AES_BLOCK_SIZE << "):" << std::endl;
         for (int i = 0; i < AES_BLOCK_SIZE; i++)
         {
-            keyFile << std::hex << (int)key_data.iv[i];
+            keyFile << std::hex << std::setw(2) << std::setfill('0') << (int)key_data.iv[i];
         }
         keyFile << std::endl;
 
@@ -162,11 +162,11 @@ namespace AES
         decrypt_file(outputFile, this->key_data.key, this->key_data.length, this->key_data.iv, destPath);
     }
 
-    void Encryptor:: decrypt_file(const std::string &path2encryptedfile,
-                      const unsigned char *key,
-                      size_t key_length,
-                      const unsigned char *iv,
-                      const std::string &path2destination)
+    void Encryptor::decrypt_file(const std::string &path2encryptedfile,
+                                 const unsigned char *key,
+                                 size_t key_length,
+                                 const unsigned char *iv,
+                                 const std::string &path2destination)
     {
         // Open encrypted file
         std::ifstream inFile(path2encryptedfile, std::ios::binary);
@@ -272,13 +272,13 @@ namespace AES
         printf("AES Key (%zu bits)\n", key_data.length * 8);
         for (int i = 0; i < key_data.length; i++)
         {
-            std::cout << std::hex << (int)key_data.key[i];
+            std::cout << std::hex << std::setw(2) << std::setfill('0') << (int)key_data.key[i];
         }
         printf("\n");
         printf("IV AES_BLOCK_SIZE (%d bytes)\n", AES_BLOCK_SIZE);
         for (int i = 0; i < AES_BLOCK_SIZE; i++)
         {
-            std::cout << std::hex << (int)key_data.iv[i];
+            std::cout << std::hex << std::setw(2) << std::setfill('0') << (int)key_data.iv[i];
         }
         printf("\n");
     }
